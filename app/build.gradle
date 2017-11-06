@@ -1,0 +1,33 @@
+apply plugin: 'com.android.application'
+
+android {
+  compileSdkVersion 27
+  buildToolsVersion "26.0.2"
+
+  defaultConfig {
+    applicationId "com.squareup.kindphotobot"
+    minSdkVersion 19
+    targetSdkVersion 27
+    versionCode 1
+    versionName "1.0"
+  }
+  packagingOptions {
+    exclude 'META-INF/maven/com.squareup.okio/okio/pom.xml'
+    exclude 'META-INF/maven/com.squareup.okio/okio/pom.properties'
+  }
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+  }
+}
+
+
+dependencies {
+  def supportLibVersion = '27.0.0'
+  def playServicesVersion = '11.4.2'
+  implementation "com.android.support:support-v4:$supportLibVersion"
+  implementation "com.android.support:design:$supportLibVersion"
+  implementation "com.android.support:recyclerview-v7:$supportLibVersion"
+  implementation "com.google.android.gms:play-services-vision:$playServicesVersion"
+  implementation 'com.jakewharton.timber:timber:4.5.1'
+}
