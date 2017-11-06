@@ -12,7 +12,23 @@
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
       android:layout_gravity="bottom|end"
-      android:text="Start Photobooth"
+      android:text="Photobooth"
+      />
+
+  <Button
+      android:id="@+id/printers_button"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_gravity="bottom|end"
+      android:text="Printers"
+      />
+
+  <Button
+      android:id="@+id/settings_button"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_gravity="bottom|end"
+      android:text="Settings"
       />
 
 </LinearLayout>

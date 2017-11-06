@@ -6,6 +6,14 @@
   <uses-feature android:name="android.hardware.camera"/>
 
   <uses-permission android:name="android.permission.CAMERA"/>
+  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+
+  <!-- Permissions for OAuth -->
+  <uses-permission android:name="android.permission.GET_ACCOUNTS"/>
+  <uses-permission android:name="android.permission.USE_CREDENTIALS"/>
+  <uses-permission android:name="android.permission.INTERNET"/>
+
+  <!-- Needed to store pictures on disk. -->
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 
   <application
@@ -33,6 +41,27 @@
     </activity>
 
     <activity
+        android:name=".oauth.OAuthActivity"
+        android:label="OAuth">
+    </activity>
+
+    <activity
+        android:name=".printer.PrinterSetupActivity"
+        android:label="Printer Setup"
+        android:theme="@style/Theme.AppCompat.Light">
+    </activity>
+
+    <activity
+        android:name=".charge.ChargeActivity"
+        android:label="Pay">
+    </activity>
+
+    <activity
+        android:name=".result.DisplayPictureActivity"
+        android:label="Display photobooth picture">
+    </activity>
+
+    <activity
         android:name=".MainActivity"
         android:label="Photobooth">
       <intent-filter>
@@ -41,6 +70,23 @@
         <category android:name="android.intent.category.LAUNCHER"/>
       </intent-filter>
     </activity>
+
+    <activity
+        android:name=".settings.SettingsActivity"
+        android:label="Photobooth Settings">
+    </activity>
+
+    <service
+        android:name=".job.JobService"
+        android:permission="android.permission.BIND_JOB_SERVICE"/>
+    <service
+        android:name=".job.GcmJobService"
+        android:exported="true"
+        android:permission="com.google.android.gms.permission.BIND_NETWORK_TASK_SERVICE">
+      <intent-filter>
+        <action android:name="com.google.android.gms.gcm.ACTION_TASK_READY"/>
+      </intent-filter>
+    </service>
 
   </application>
 

@@ -1,4 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <string name="ok">OK</string>
+  <string name="low_storage_error">Face detector dependencies cannot be downloaded due to low device storage</string>
+  <string name="pos_api_note">Picture</string>
+  <string name="app_task_locked">App task is locked</string>
+  <string name="transaction_error">Error processing transaction</string>
+  <string name="failed_credentials">Failed to obtain credentials</string>
+  <string name="failed_select_credentials">Failed to select credentials</string>
+  <string formatted="true" name="unexpected_oauth_result">Unexpected result code %d for unknown request code %d</string>
+  <string formatted="true" name="could_not_find_account">Could not find account for %s</string>
+  <string name="oauth_successful">OAuth Successful</string>
+  <string name="printer_name_format">%s (%s)</string>
 </resources>

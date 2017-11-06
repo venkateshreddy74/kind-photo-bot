@@ -10,17 +10,31 @@ public enum GraphicFactory {
     @Override public FaceGraphic create(Context context) {
       return new OreoGraphic(context);
     }
-  }, //
+  },
+
+  ROBOT(R.drawable.robot) {
+    @Override public FaceGraphic create(Context context) {
+      return new RobotGraphic(context);
+    }
+  },
 
   LEAK_CANARY(R.drawable.leakcanary) {
     @Override public FaceGraphic create(Context context) {
       return new LeakCanaryGraphic(context);
     }
-  }, //
+  },
 
-  // Add more effects here.
+  JAKE(R.drawable.jake) {
+    @Override public FaceGraphic create(Context context) {
+      return new JakeGraphic(context);
+    }
+  },
 
-  ;
+  JAKE_FULL(R.drawable.jake_full) {
+    @Override public FaceGraphic create(Context context) {
+      return new JakeFullGraphic(context);
+    }
+  };
 
   public final @DrawableRes int drawableResId;
 

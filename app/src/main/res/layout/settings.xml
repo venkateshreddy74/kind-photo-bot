@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    >
+
+  <CheckBox
+      android:id="@+id/kiosk_check"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Kiosk Mode"
+      android:textSize="20dp"
+      />
+
+  <CheckBox
+      android:id="@+id/payments_check"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="$1 pictures"
+      android:textSize="20dp"
+      />
+
+
+  <EditText
+      android:id="@+id/tweet_message"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:hint="Tweet message"
+      android:textSize="20dp"
+      />
+
+  <TextView
+      android:id="@+id/twitter_state"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:textSize="20dp"
+      />
+
+  <com.twitter.sdk.android.core.identity.TwitterLoginButton
+      android:id="@+id/twitter_login_button"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:textSize="20dp"
+      />
+
+  <Button
+      android:id="@+id/twitter_logout_button"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Logout from Twitter"
+      android:textSize="20dp"
+      />
+</LinearLayout>

@@ -13,12 +13,35 @@
       android:layout_height="match_parent"
       />
 
+  <com.squareup.kindphotobot.snap.ui.CameraButton
+      android:id="@+id/photo_button"
+      android:layout_width="96dp"
+      android:layout_height="96dp"
+      android:layout_gravity="bottom|center_horizontal"
+      android:layout_marginBottom="96dp"
+      />
+
   <android.support.v7.widget.RecyclerView
       android:id="@+id/graphic_recycler_view"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:layout_gravity="bottom"
       android:layout_marginBottom="16dp"
+      />
+
+  <TextView
+      android:id="@+id/count_down"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_gravity="center"
+      android:shadowColor="@color/android_green_light"
+      android:shadowDx="0"
+      android:shadowDy="0"
+      android:shadowRadius="8"
+      android:textColor="@color/android_green"
+      android:textSize="100dp"
+      android:textStyle="bold"
+      android:visibility="gone"
       />
 
 </FrameLayout>

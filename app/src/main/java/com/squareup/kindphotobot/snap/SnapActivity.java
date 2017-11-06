@@ -6,9 +6,12 @@ import android.graphics.Canvas;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.TextView;
+import android.widget.Toast;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.vision.CameraSource;
@@ -16,32 +19,35 @@ import com.google.android.gms.vision.MultiProcessor;
 import com.google.android.gms.vision.Tracker;
 import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.FaceDetector;
+import com.squareup.kindphotobot.App;
 import com.squareup.kindphotobot.R;
+import com.squareup.kindphotobot.result.DisplayPictureActivity;
+import com.squareup.kindphotobot.settings.SettingsStore;
 import com.squareup.kindphotobot.snap.camera.CameraSourcePreview;
 import com.squareup.kindphotobot.snap.camera.GraphicOverlay;
 import com.squareup.kindphotobot.snap.graphic.FaceGraphic;
 import com.squareup.kindphotobot.snap.graphic.GraphicFactory;
+import com.squareup.kindphotobot.util.ParentActivity;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import timber.log.Timber;
 
 import static android.Manifest.permission.CAMERA;
 import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
+import static com.squareup.kindphotobot.util.Animators.onAnimationEnd;
 import static com.squareup.kindphotobot.util.RecyclerSnaps.centerSnap;
 
-public class SnapActivity extends AppCompatActivity {
+public class SnapActivity extends ParentActivity {
 
-  private static final int PRINTED_WIDTH_INCH = 86;
-  private static final int PRINTED_HEIGHT_INCH = 54;
-  private static final int PRINTER_DPI = 300;
-
-  /** Ratio of the KC-36IP cards, 54x86mm */
-  public static final float PRINTED_CARD_RATIO = (PRINTED_WIDTH_INCH * 1.0f) / PRINTED_HEIGHT_INCH;
-
-  // If you get a dark preview, try lowering the frame rate to 15 fps.
+  // Higher frame rates can lead to dark preview. Saw that happen on the Pixel 2.
   // https://github.com/googlesamples/android-vision/issues/162#issuecomment-271508706
+  //private static final float MAX_FRAME_RATE = 15.0f;
+  // On the other hands, 30fps works fine on Pixel-C and 15fps leads to lag on activity transition.
+  // ¯\_(ツ)_/¯ tweak until it works for you.
   private static final float MAX_FRAME_RATE = 30f;
+  private static final int COUNT_DOWN_SECONDS = 4;
 
   private CameraSource cameraSource = null;
 
@@ -54,12 +60,28 @@ public class SnapActivity extends AppCompatActivity {
   private volatile int graphicIndex;
 
   private final List<GraphicFaceTracker> faceTrackers = new ArrayList<>();
+  private BitmapBytesHolder bitmapBytesHolder;
+
+  private int countDown = 0;
+  private TextView countDownView;
+  private SettingsStore settingsStore;
+  private Toast toast;
+
+  public SnapActivity() {
+    super(true);
+  }
 
   @Override public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.snap);
 
+    App app = App.from(this);
+    bitmapBytesHolder = app.bitmapHolder();
+    settingsStore = app.settingsStore();
+
     preview = findViewById(R.id.preview);
+    countDownView = findViewById(R.id.count_down);
+
     graphicOverlay = preview.getGraphicOverlay();
 
     if (hasPermission(CAMERA) && hasPermission(WRITE_EXTERNAL_STORAGE)) {
@@ -72,6 +94,8 @@ public class SnapActivity extends AppCompatActivity {
 
     centerSnap(recyclerView, (position) -> updateGraphicFactory(GraphicFactory.values()[position]));
   }
+
+
 
   private boolean hasPermission(String permission) {
     return ActivityCompat.checkSelfPermission(this, permission) == PERMISSION_GRANTED;
@@ -123,6 +147,59 @@ public class SnapActivity extends AppCompatActivity {
         .setRequestedFps(MAX_FRAME_RATE)
         .setAutoFocusEnabled(true)
         .build();
+    findViewById(R.id.photo_button).setOnClickListener(v -> startCountDown());
+  }
+
+  private void startCountDown() {
+    countDown = COUNT_DOWN_SECONDS + 1;
+    countDownView.setVisibility(View.VISIBLE);
+    countDown();
+  }
+
+  private void countDown() {
+    countDownView.setScaleX(1);
+    countDownView.setScaleY(1);
+    countDownView.animate()
+        .setDuration(1000)
+        .scaleX(0)
+        .scaleY(0)
+        .setListener(onAnimationEnd((animator) -> {
+          if (countDown == COUNT_DOWN_SECONDS + 1) {
+            // count down got restarted.
+            return;
+          }
+          if (countDown == 1) {
+            countDownView.setVisibility(View.GONE);
+            takePicture();
+          } else {
+
+            countDown();
+          }
+        }));
+    countDown--;
+    countDownView.setText(String.format(Locale.getDefault(), "%d", countDown));
+  }
+
+  private void takePicture() {
+    CameraSource.ShutterCallback shutterCallback = () -> {
+      toast = new Toast(SnapActivity.this);
+      toast.setGravity(Gravity.CENTER_VERTICAL, 0, 0);
+      toast.setDuration(Toast.LENGTH_SHORT);
+      LayoutInflater inflater = LayoutInflater.from(SnapActivity.this);
+      toast.setView(inflater.inflate(R.layout.leak_canary_heap_dump_toast, null));
+      toast.show();
+    };
+    CameraSource.PictureCallback pictureCallback = data -> {
+      bitmapBytesHolder.hold(data);
+      DisplayPictureActivity.start(this, graphicIndex, PictureRenderer.PRINTED_CARD_RATIO);
+    };
+    try {
+      cameraSource.takePicture(shutterCallback, pictureCallback);
+    } catch (RuntimeException e) {
+      // Sometimes Camera.native_takePicture throws with no explanation.
+      Timber.d(e, "takePicture native code threw an exception");
+      Toast.makeText(this, "Failed to take picture", Toast.LENGTH_SHORT).show();
+    }
   }
 
   private FaceDetector createFaceDetector(Context context) {
@@ -140,8 +217,34 @@ public class SnapActivity extends AppCompatActivity {
   @Override protected void onPause() {
     super.onPause();
     preview.stop();
+    if (toast != null) {
+      toast.cancel();
+      toast = null;
+    }
   }
 
+  @Override public void onBackPressed() {
+
+    if (settingsStore.arePaymentsEnabled()) {
+      new AlertDialog.Builder(this).setTitle("Are you sure?")
+          .setMessage("You will lose your $1 credit if you leave now")
+          .setPositiveButton("No Picture for me!", (dialog, which) -> finish())
+          .setNegativeButton("Stay here", null)
+          .show();
+    } else {
+      if (isAppInLockTaskMode()) {
+        Toast.makeText(this, "App task is locked", Toast.LENGTH_SHORT).show();
+        return;
+      } else {
+        finish();
+      }
+    }
+  }
+
+  /**
+   * Releases the resources associated with the camera source, the associated detector, and the
+   * rest of the processing pipeline.
+   */
   @Override protected void onDestroy() {
     super.onDestroy();
     if (cameraSource != null) {
@@ -179,7 +282,7 @@ public class SnapActivity extends AppCompatActivity {
       GoogleApiAvailability.getInstance().getErrorDialog(this, code, RC_HANDLE_GMS).show();
     }
     if (cameraSource != null) {
-      preview.start(cameraSource, graphicOverlay, PRINTED_CARD_RATIO);
+      preview.start(cameraSource, graphicOverlay, PictureRenderer.PRINTED_CARD_RATIO);
     }
   }
 
