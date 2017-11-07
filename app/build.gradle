@@ -30,4 +30,5 @@ dependencies {
   implementation "com.android.support:recyclerview-v7:$supportLibVersion"
   implementation "com.google.android.gms:play-services-vision:$playServicesVersion"
   implementation 'com.jakewharton.timber:timber:4.5.1'
+  implementation 'com.squareup.sdk:point-of-sale-sdk:2.0'
 }

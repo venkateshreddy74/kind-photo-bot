@@ -2,16 +2,26 @@ package com.squareup.kindphotobot.snap;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.print.PrintHelper;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
+import android.util.SparseArray;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ImageView;
+import android.widget.Toast;
+
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.vision.CameraSource;
+import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.MultiProcessor;
 import com.google.android.gms.vision.Tracker;
 import com.google.android.gms.vision.face.Face;
@@ -21,8 +31,10 @@ import com.squareup.kindphotobot.snap.camera.CameraSourcePreview;
 import com.squareup.kindphotobot.snap.camera.GraphicOverlay;
 import com.squareup.kindphotobot.snap.graphic.FaceGraphic;
 import com.squareup.kindphotobot.snap.graphic.GraphicFactory;
+
 import java.util.ArrayList;
 import java.util.List;
+
 import timber.log.Timber;
 
 import static android.Manifest.permission.CAMERA;
@@ -34,30 +46,84 @@ public class SnapActivity extends AppCompatActivity {
 
   private static final int PRINTED_WIDTH_INCH = 86;
   private static final int PRINTED_HEIGHT_INCH = 54;
-  private static final int PRINTER_DPI = 300;
-
   /** Ratio of the KC-36IP cards, 54x86mm */
   public static final float PRINTED_CARD_RATIO = (PRINTED_WIDTH_INCH * 1.0f) / PRINTED_HEIGHT_INCH;
-
+  private static final int PRINTER_DPI = 300;
   // If you get a dark preview, try lowering the frame rate to 15 fps.
   // https://github.com/googlesamples/android-vision/issues/162#issuecomment-271508706
   private static final float MAX_FRAME_RATE = 30f;
-
-  private CameraSource cameraSource = null;
-
-  private CameraSourcePreview preview;
-  private GraphicOverlay graphicOverlay;
-
   private static final int RC_HANDLE_GMS = 9001;
   private static final int PERMISSION_REQUEST_CODE = 1;
-
-  private volatile int graphicIndex;
-
   private final List<GraphicFaceTracker> faceTrackers = new ArrayList<>();
+  private CameraSource cameraSource = null;
+  private CameraSourcePreview preview;
+  private GraphicOverlay graphicOverlay;
+  private volatile int graphicIndex;
 
   @Override public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.snap);
+
+    findViewById(R.id.take_picture).setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View view) {
+
+        if (cameraSource != null) {
+          cameraSource.takePicture(new CameraSource.ShutterCallback() {
+
+            @Override
+            public void onShutter() {
+
+            }
+          }, new CameraSource.PictureCallback() {
+
+            @Override
+            public void onPictureTaken(byte[] bytes) {
+
+              BitmapFactory.Options options = new BitmapFactory.Options();
+              options.inMutable = true;
+
+
+              Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, options);
+
+              FaceDetector faceDetector = new FaceDetector.Builder(getBaseContext()).setMode(FaceDetector.ACCURATE_MODE).build();
+
+             /* FaceDetector detector = new FaceDetector.Builder(getBaseContext())
+                      .setProminentFaceOnly(true)
+                      .build();*/
+
+              Frame frame = new Frame.Builder().setBitmap(bitmap).build();
+
+
+              SparseArray<Face> faceSparseArray = faceDetector.detect(frame);
+
+              //  FaceGraphic faceGraphic = (FaceGraphic) GraphicFactory.values();
+
+              FaceGraphic faceGraphic = GraphicFactory.values()[graphicIndex].create(getBaseContext());
+
+              faceGraphic.draw(new Canvas(), Scaler.ISO);
+
+              faceDetector.release();
+
+
+              Toast toast = new Toast(getBaseContext());
+              toast.setGravity(Gravity.CENTER_VERTICAL, 0, 0);
+              toast.setDuration(Toast.LENGTH_LONG);
+              LayoutInflater inflater = LayoutInflater.from(getBaseContext());
+              View toastView = inflater.inflate(R.layout.toasts, null);
+              ImageView pictureView = toastView.findViewById(R.id.picture_view);
+              pictureView.setImageBitmap(bitmap);
+              toast.setView(toastView);
+              toast.show();
+
+              print(bitmap);
+
+
+            }
+          });
+        }
+      }
+    });
 
     preview = findViewById(R.id.preview);
     graphicOverlay = preview.getGraphicOverlay();
@@ -71,6 +137,12 @@ public class SnapActivity extends AppCompatActivity {
     RecyclerView recyclerView = findViewById(R.id.graphic_recycler_view);
 
     centerSnap(recyclerView, (position) -> updateGraphicFactory(GraphicFactory.values()[position]));
+  }
+
+  private void print(Bitmap bitmap) {
+    PrintHelper photoPrinter = new PrintHelper(getBaseContext());
+    photoPrinter.setScaleMode(PrintHelper.SCALE_MODE_FIT);
+    photoPrinter.printBitmap("awesome_photo.jpg", bitmap, () -> this.finish());
   }
 
   private boolean hasPermission(String permission) {
